@@ -34,14 +34,16 @@ class WOLController:
             print(e)
             return False
         
-    def login(self, username: str, password: str) -> bool:
+    def login(self, username: str, password: str) -> None:
         target_url = f'{self.url}/sess-bin/login_handler.cgi'
         header = {'Referer': self.url + '/sess-bin/login-session.cgi'}
         data = {'username': username, 'passwd': password}
-
         res = requests.post(url=target_url, headers=header, data=data)
         
-        self.session = {'efm_session_id': re.search(r"setCookie\('([A-Za-z0-9]+)'\);", res.text).group(1)}
+        if '//session_timeout' in res.text:
+            raise AuthenticationFailed
+        else:
+            self.session = {'efm_session_id': re.search(r"setCookie\('([A-Za-z0-9]+)'\);", res.text).group(1)}
 
     def get_wol_list(self):
         try:
