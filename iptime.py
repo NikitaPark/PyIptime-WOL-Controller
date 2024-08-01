@@ -23,16 +23,15 @@ class WOLController:
         self.host = host
         self.port = port
 
-    def check_connection(self) -> bool:
-        target_url = f'http://{self.host}:{self.port}'
-        
         try:
-            requests.get(url=target_url, timeout=10)
-            self.url = target_url    
-            return True  
-        except Exception as e:
-            print(e)
-            return False
+            _target_url = f'http://{self.host}:{self.port}'
+            requests.get(url=_target_url, timeout=10)
+            self.url = _target_url
+        except requests.ConnectTimeout as e:
+            raise ConnectionFailed
+
+    def check_session_timeout(self, response) -> None:
+        if '//session_timeout' in response: raise SessionTimeout
         
     def login(self, username: str, password: str) -> None:
         target_url = f'{self.url}/sess-bin/login_handler.cgi'
