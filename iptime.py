@@ -2,6 +2,22 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
+class SessionTimeout(Exception):
+    def __init__(self):
+        super().__init__('Session has timed out. Login again to use the controller.')
+
+class SessionNotFound(Exception):
+    def __init__(self):
+        super().__init__('Session dose not exist. Login is required to use the controller.')
+
+class AuthenticationFailed(Exception):
+    def __init__(self):
+        super().__init__('Authentication is failed. Check your username and password.')
+
+class ConnectionFailed(Exception):
+    def __init__(self):
+        super().__init__('Failed to connect to router. Check connection to router')
+
 class WOLController:
     def __init__(self, host: str, port: int) -> None:
         self.host = host
