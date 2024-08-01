@@ -72,11 +72,13 @@ class WOLController:
 
         mac_addr = mac_addr.upper().replace('-', ':')
 
-        target_url = f'{self.url}/sess-bin/timepro.cgi'
-        params = {'tmenu': 'iframe', 'smenu': 'expertconfwollist', 'nomore': 0, 'wakeupchk': {mac_addr}, 'act': 'wake'}
-        header = {'Referer': f'{self.url}/sess-bin/timepro.cgi?tmenu=iframe&smenu=expertconfwollist'}
-
-        res = requests.post(url=target_url, data=params, headers=header, cookies=self.session)
-        print(res.request.body)
+        try:
+            target_url = f'{self.url}/sess-bin/timepro.cgi' 
+            params = {'tmenu': 'iframe', 'smenu': 'expertconfwollist', 'nomore': 0, 'wakeupchk': {mac_addr}, 'act': 'wake'}
+            header = {'Referer': f'{self.url}/sess-bin/timepro.cgi?tmenu=iframe&smenu=expertconfwollist'}
+            res = requests.post(url=target_url, data=params, headers=header, cookies=self.session)
         
+        except requests.Timeout:
+            raise ConnectionFailed
+
         return True
