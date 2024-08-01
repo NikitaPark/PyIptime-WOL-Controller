@@ -44,27 +44,35 @@ class WOLController:
         self.session = {'efm_session_id': re.search(r"setCookie\('([A-Za-z0-9]+)'\);", res.text).group(1)}
 
     def get_wol_list(self):
-        target_url = f'{self.url}/sess-bin/timepro.cgi'
-        params = {'tmenu': 'iframe', 'smenu': 'expertconfwollist'}
-        header = {'Referer': f'{self.url}/sess-bin/timepro.cgi?tmenu=expertconf&smenu=remotepc'}
+        try:
+            target_url = f'{self.url}/sess-bin/timepro.cgi'
+            params = {'tmenu': 'iframe', 'smenu': 'expertconfwollist'}
+            header = {'Referer': f'{self.url}/sess-bin/timepro.cgi?tmenu=expertconf&smenu=remotepc'}
+            
+            res = requests.get(url=target_url, params=params, headers=header, cookies=self.session)
+            
+            if self.check_session_timeout(response=res.text):
+                raise AuthenticationFailed
+            
+            soup = BeautifulSoup(res.text, 'html.parser')
+            rows = soup.find_all('tr', attrs={'class': 'wol_main_tr'})
+            rows.pop(0)
+
+            ret_data = []
+            for row in rows:
+                target_info = {}
+                cols = row.find_all('td')
+                
+                if len(cols) == 6:
+                    target_info['id'] = cols[0].find('p').get_text()
+                    target_info['mac_addr'] = cols[1].find('span').get_text()
+                    target_info['desc'] = cols[2].find('span').get_text()
+                    ret_data.append(target_info)
+                else:
+                    return ret_data
         
-        res = requests.get(url=target_url, params=params, headers=header, cookies=self.session)
-        soup = BeautifulSoup(res.text, 'html.parser')
-
-        rows = soup.find_all('tr', attrs={'class': 'wol_main_tr'})
-        rows.pop(0)
-
-        ret_data = []
-        for row in rows:
-            target_info = {}
-            cols = row.find_all('td')
-            if len(cols) == 6:
-                target_info['id'] = cols[0].find('p').get_text()
-                target_info['mac_addr'] = cols[1].find('span').get_text()
-                target_info['desc'] = cols[2].find('span').get_text()
-                ret_data.append(target_info)
-            else:
-                return ret_data
+        except requests.Timeout:
+            raise ConnectionFailed
 
     def do_wake_pc(self, mac_addr: str) -> None | bool:
         if not re.match(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', mac_addr):
